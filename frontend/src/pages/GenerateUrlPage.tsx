@@ -17,7 +17,6 @@ export function GenerateUrlContent() {
 
     const mutation = trpc.useMutation('new', {
         onSuccess: (data, variables, context) => {
-            console.log("success")
             navigate(`/url/${data.id}/overview`);
         },
     });

@@ -21,14 +21,14 @@ export function returnError(error: LinkHasExpiredError | UnknownError | ZodError
     switch (error.type) {
         case 'link_has_expired':
             return new TRPCError({
-                code: 'BAD_REQUEST',
-                message: `Link has expired: ${error.urlId}`,
+                code: "NOT_FOUND",
+                message: `link_has_expired`,
             })
 
         case 'unknown':
             return new TRPCError({
                 code: 'INTERNAL_SERVER_ERROR',
-                message: `Unknown error`,
+                message: `unknown_error`,
             })
     }
 }
