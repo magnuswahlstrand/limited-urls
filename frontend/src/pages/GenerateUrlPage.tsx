@@ -3,6 +3,7 @@ import {GenerateURL} from "../components/UrlForm";
 import {trpc} from "../utils/trpc";
 import {useNavigate} from "react-router-dom";
 import MainContainer from "../components/MainContainer";
+import {useClientId} from "../lib/hooks";
 
 export function GenerateUrlPage() {
     return (
@@ -13,6 +14,7 @@ export function GenerateUrlPage() {
 }
 
 export function GenerateUrlContent() {
+    let clientId = useClientId()
     let navigate = useNavigate();
 
     const mutation = trpc.useMutation('new', {
@@ -22,7 +24,7 @@ export function GenerateUrlContent() {
     });
 
     const handleNewURL = (url: string, maxRedirects: number) => {
-        mutation.mutate({url, max_forwards: maxRedirects});
+        mutation.mutate({url, max_forwards: maxRedirects, owner_client_id: clientId});
     }
 
     return <GenerateURL onSubmit={handleNewURL} isProcessing={mutation.isLoading}/>

@@ -1,21 +1,25 @@
 import {DynamoDB} from "aws-sdk";
-import {NewReq, URL} from "./model";
+// import {unmarshall} from "aws-sdk/util-dynamodb";
+import {NewReq, OverviewResp, RedirectResp, URL} from "./model";
 import {Result} from 'true-myth';
-import {LinkHasExpiredError, UnknownError} from "./errors";
+import {LinkHasExpiredError, LinkNotFoundError, NotAuthorizedError, UnknownError} from "./errors";
 
 
 const tableName = process.env.TABLE_NAME ?? ""
 const dynamoDb = new DynamoDB.DocumentClient();
 
-export const InsertNewURL = async (id: string, newUrl: NewReq): Promise<Result<URL, never>> => {
+export const InsertNewURL = async (id: string, newUrl: NewReq): Promise<Result<string, never>> => {
     const now = new Date().toISOString()
 
-    const u: URL = {
+    const u = {
         id: id,
         ...newUrl,
         remaining_forwards: newUrl.max_forwards,
         created_at: now,
-        updated_at: now
+        updated_at: now,
+
+        forwarded_at: dynamoDb.createSet([""]),
+        forwarded_client_ids: dynamoDb.createSet([""]),
     }
 
     const putParams = {
@@ -24,10 +28,23 @@ export const InsertNewURL = async (id: string, newUrl: NewReq): Promise<Result<U
     };
 
     await dynamoDb.put(putParams).promise();
-    return Result.ok(u);
+    return Result.ok(id);
 }
 
-export const getOverview = async (id: string): Promise<Result<URL, LinkHasExpiredError>> => {
+function unwrapSet(itemElement: any) {
+    return itemElement.values.filter((v: string) => v != "")
+}
+
+function parseUrlRecord(record: any) {
+    // TODO: Is there a better way to handle sets?
+    console.log(record)
+    record["forwarded_at"] = unwrapSet(record["forwarded_at"])
+    record["forwarded_client_ids"] = unwrapSet(record["forwarded_client_ids"])
+
+    return URL.parse(record)
+}
+
+export const GetOverview = async (id: string, client_id: string): Promise<Result<OverviewResp, LinkNotFoundError | NotAuthorizedError>> => {
     const getParams = {
         TableName: tableName,
         Key: {
@@ -37,24 +54,50 @@ export const getOverview = async (id: string): Promise<Result<URL, LinkHasExpire
 
     const result = await dynamoDb.get(getParams).promise();
     if (!result.Item) {
-        return Result.err({type: 'link_has_expired', urlId: id});
-
+        return Result.err({type: 'link_not_found', urlId: id});
     }
-    return Result.ok(URL.parse(result.Item));
+
+    const url = parseUrlRecord(result.Item)
+    if (url.owner_client_id != client_id) {
+        return Result.err({type: 'not_authorized', urlId: id});
+    }
+
+    const overview: OverviewResp = {
+        id: url.id,
+        url: url.url,
+        max_forwards: url.max_forwards,
+        remaining_forwards: url.remaining_forwards,
+        created_at: url.created_at,
+        updated_at: url.updated_at,
+    }
+
+    return Result.ok(overview);
 }
 
-export const DecreaseURLForwards = async (urlId: string, token: string): Promise<Result<URL, LinkHasExpiredError | UnknownError>> => {
+export const DecreaseURLForwards = async (urlId: string, clientId: string): Promise<Result<RedirectResp, LinkHasExpiredError | LinkNotFoundError | UnknownError>> => {
+    const result = await dynamoDb.get({TableName: tableName, Key: {id: urlId}}).promise();
+    if (!result.Item) {
+        return Result.err({type: 'link_not_found', urlId});
+    }
+
+    const url = parseUrlRecord(result.Item)
+    if (url.forwarded_client_ids.includes(clientId) || url.owner_client_id == clientId) {
+        return Result.ok({url: url.url})
+    }
+
     const now = new Date().toISOString()
     const updateParams = {
         TableName: tableName,
         Key: {
             id: urlId,
         },
-        UpdateExpression: `set remaining_forwards = remaining_forwards + :value, updated_at = :updated_at`,
+        // forwarded_at = list_append(forwarded_at, :now),
+        UpdateExpression: `SET remaining_forwards = remaining_forwards + :value, updated_at = :now ADD forwarded_client_ids :client_id`,
         ExpressionAttributeValues: {
             ":value": -1,
-            ":updated_at": now,
-            ":zero": 0
+            ":now": now,
+            ":zero": 0,
+            ":client_id": dynamoDb.createSet([clientId]),
         },
         ConditionExpression: `remaining_forwards > :zero AND attribute_exists(id)`,
         ReturnValues: "ALL_NEW",
@@ -63,8 +106,8 @@ export const DecreaseURLForwards = async (urlId: string, token: string): Promise
 
     try {
         const resp = await dynamoDb.update(updateParams).promise();
-
-        return Result.ok(await URL.parseAsync(resp.Attributes))
+        const u = parseUrlRecord(resp.Attributes)
+        return Result.ok({url: u.url})
     } catch (e: unknown) {
         // TODO: How do we distinguish URL missing from Condition failed?
         console.log(JSON.stringify(e))

@@ -1,11 +1,13 @@
 import React from 'react';
-import {Button, createStyles, TextInput} from '@mantine/core';
+import {Button, createStyles, TextInput, Title} from '@mantine/core';
 import {useParams} from 'react-router-dom';
 import {trpc} from "../utils/trpc";
 import {Copy} from 'tabler-icons-react';
 import {useClipboard} from '@mantine/hooks';
-import OverviewTable from "./Overview/Table";
+import OverviewTable from "../components/OverviewTable";
 import MainContainer from "../components/MainContainer";
+import {useClientId} from "../lib/hooks";
+import {ErrorContainer} from "../components/InnerContainer";
 
 const useStyles = createStyles((theme, _params, getRef) => ({
     input: {
@@ -41,25 +43,50 @@ const PublicURLInput = (props: { url: string }) => {
 
 export function OverviewPage() {
     return (
-        <MainContainer title="Overview">
+        <MainContainer>
             <OverviewContent/>
         </MainContainer>
     )
 }
 
+
+function handleError(errorStr: string) {
+    switch (errorStr) {
+        case "not_authorized":
+            return <ErrorContainer title={"Not authorized"} subtitle={"(to view this link overview)"}/>
+        case "link_not_found":
+            return <ErrorContainer title={"Link not found"} subtitle={"(or never existed)"}/>
+        default:
+            return <ErrorContainer title={"An error occurred"} subtitle={""}/>
+    }
+}
+
 export function OverviewContent() {
+    let clientId = useClientId()
     let {urlId} = useParams() as { urlId: string };
 
-    const {isLoading, isError, error, data} = trpc.useQuery(['overview', urlId]);
+    const {isLoading, isError, error, data} = trpc.useQuery(['overview', {id: urlId, client_id: clientId}], {
+        retry: (failureCount, error) => {
+            if (error.message === "link_not_found") {
+                return false
+            } else if(error.message === "not_authorized") {
+                return false
+            }
+            console.log(error.message)
+            return failureCount < 3
+        }
+    });
     const publicUrl = window.location.href.replace("/overview", "")
 
+
     if (isLoading) {
-        return <><PublicURLInput url=""/><OverviewTable/></>
+        return <><Title align="center" order={1}>Overview</Title><PublicURLInput url=""/><OverviewTable/></>
     } else if (isError) {
-        return <div>Something went wrong: {error.message}</div>
+        return handleError(error.message)
     } else if (!data) {
-        return <div>Something went wrong</div>
+        return handleError("unknown")
     } else {
-        return <><PublicURLInput url={publicUrl}/><OverviewTable url={data}/></>
+        return <><Title align="center" order={1}>Overview</Title><PublicURLInput url={publicUrl}/><OverviewTable
+            url={data} publicUrl={publicUrl}/></>
     }
 }

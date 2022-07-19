@@ -12,9 +12,13 @@ limited-urls is deployed to AWS using [the Serverless Stack](sst.dev).
 
 ## Todo
 * [x] Allow URLs without protocol schema
-* [ ] Store URL (or token) in local storage and use that in request
-* [ ] Create a test link for admin
-* [ ] Only allow overview for the admin
+* [x] Store URL (or token) in local storage and use that in request
+* [x] Only allow overview for the admin
 * [x] Style the redirect page
   * [x] During load
   * [x] When link has expired
+* [x] Don't consume links for already redirected users
+* [x] Create a test link for admin
+* [ ] Deploy to production
+* [ ] Refactor React components
+* [ ] Update Logo and title

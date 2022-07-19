@@ -1,5 +1,5 @@
 import React from 'react';
-import {Skeleton, Table, Title} from '@mantine/core';
+import {Skeleton, Table, Title, Anchor} from '@mantine/core';
 import moment from 'moment';
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
         created_at: string
         updated_at: string
     }
+    publicUrl?: string
 }
 
 const Stats = ({label, value}: { label: string, value: string | React.ReactNode }) => {
@@ -21,7 +22,7 @@ const Stats = ({label, value}: { label: string, value: string | React.ReactNode 
 }
 
 
-export default function OverviewTable({url}: Props) {
+export default function OverviewTable({url, publicUrl}: Props) {
     if (!url) {
         return (<Table>
             <tbody>
@@ -31,6 +32,7 @@ export default function OverviewTable({url}: Props) {
             <Stats label="Target URL" value={<Skeleton width={200} height={20} />}/>
             <Stats label="Created" value={<Skeleton width={200} height={20} />}/>
             <Stats label="Last viewed" value={<Skeleton width={200} height={20} />}/>
+            <Stats label="Test link" value={<Skeleton width={200} height={20} />}/>
             </tbody>
         </Table>)
     }
@@ -44,6 +46,11 @@ export default function OverviewTable({url}: Props) {
             <Stats label="Target URL" value={url.url}/>
             <Stats label="Created" value={moment(url.created_at).fromNow()}/>
             <Stats label="Last viewed" value={moment(url.updated_at).fromNow()}/>
+            <Stats label="Test redirect" value={
+                <><Anchor size="sm" href={publicUrl} target="_blank">Link </Anchor>
+                    (opens in a new window)
+                </>
+            }/>
             </tbody>
         </Table>
     )

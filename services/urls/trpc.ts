@@ -1,10 +1,9 @@
 import * as trpc from '@trpc/server';
 import {awsLambdaRequestHandler} from '@trpc/server/adapters/aws-lambda';
-import {NewReq, RedirectReq} from "./model";
+import {NewReq, OverviewReq, RedirectReq} from "./model";
 import * as db from "./db";
 import {v4} from 'uuid';
 import {returnError} from "./errors";
-import {z} from "zod";
 
 const appRouter = trpc.router()
     .mutation('new', {
@@ -17,7 +16,7 @@ const appRouter = trpc.router()
     }).mutation("redirect", {
         input: RedirectReq,
         async resolve(req) {
-            const result = await db.DecreaseURLForwards(req.input.id, "")
+            const result = await db.DecreaseURLForwards(req.input.id, req.input.client_id)
             if (result.isErr) {
                 throw returnError(result.error);
             }
@@ -25,9 +24,9 @@ const appRouter = trpc.router()
             return {url: result.value};
         },
     }).query('overview', {
-        input: z.string(),
+        input: OverviewReq,
         async resolve(req) {
-            const result = await db.getOverview(req.input)
+            const result = await db.GetOverview(req.input.id, req.input.client_id)
             if (result.isErr) {
                 throw returnError(result.error);
             }
