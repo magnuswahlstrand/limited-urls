@@ -4,8 +4,15 @@ import {trpc} from "../utils/trpc";
 import {useNavigate} from "react-router-dom";
 import MainContainer from "../components/MainContainer";
 
-
 export function GenerateUrlPage() {
+    return (
+        <MainContainer title="Generate a new limited URL">
+            <GenerateUrlContent/>
+        </MainContainer>
+    )
+}
+
+export function GenerateUrlContent() {
     let navigate = useNavigate();
 
     const mutation = trpc.useMutation('new', {
@@ -19,10 +26,5 @@ export function GenerateUrlPage() {
         mutation.mutate({url, max_forwards: maxRedirects});
     }
 
-
-    return (
-        <MainContainer title="Generate a new limited URL">
-            <GenerateURL onSubmit={handleNewURL} isProcessing={mutation.isLoading}/>
-        </MainContainer>
-    );
+    return <GenerateURL onSubmit={handleNewURL} isProcessing={mutation.isLoading}/>
 }

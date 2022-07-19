@@ -1,7 +1,7 @@
 {
   "extends": "../tsconfig.json",
   "include": [
-    "url"
+    "urls"
   ],
   "compilerOptions": {
     "module": "esnext",

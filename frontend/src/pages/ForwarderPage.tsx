@@ -1,6 +1,8 @@
-import React from 'react';
-import {Container, createStyles, Paper, Title} from '@mantine/core';
+import React, {useEffect} from 'react';
+import {Button, createStyles, Loader} from '@mantine/core';
 import {useParams} from 'react-router-dom';
+import {trpc} from "../utils/trpc";
+import MainContainer from "../components/MainContainer";
 
 const useStyles = createStyles((theme) => ({}));
 
@@ -9,19 +11,48 @@ interface HeaderSimpleProps {
 }
 
 export function ForwarderPage() {
-    let {urlId} = useParams();
+    return (
+        <MainContainer>
+            <ForwarderContent/>
+        </MainContainer>
+    )
+}
 
-    const handleNewURL = (url: string, maxRedirects: number) => {
-        console.log(url, maxRedirects)
+export function ForwarderContent() {
+    let {urlId} = useParams() as { urlId: string };
+
+    const mutation = trpc.useMutation('redirect', {
+        onSuccess: (data, variables, context) => {
+            console.log("success")
+            console.log(data)
+            window.location.replace(data.url.url);
+        }
+    });
+
+    useEffect(() => {
+        mutation.mutate({id: urlId})
+    }, []);
+
+    //
+    // const handleNewURL = () => {
+    //     // TODO FIx
+    //     mutation.mutate({id: urlId ?? ""})
+    // }
+
+    if (mutation.isLoading) {
+        return <div>Redirecting<Loader size="lg"/></div>
     }
 
-    return (
-        <Container p="xl">
-            <Paper shadow="lg" p="xl">
-                <Title order={1} m={"xl"}>Should redirect</Title>
-                Hello
-                {urlId}
-            </Paper>
-        </Container>
-    );
+    if (mutation.isError) {
+        return <div>
+            {mutation.error.message}
+
+            <Button onClick={() => window.location.reload()}>Try again</Button>
+        </div>
+    }
+
+    return (<div>
+        Redirecting
+        <Loader size="lg"/>
+    </div>);
 }

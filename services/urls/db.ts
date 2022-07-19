@@ -1,7 +1,7 @@
 import {DynamoDB} from "aws-sdk";
 import {NewReq, URL} from "./model";
 import {Result} from 'true-myth';
-import {UrlDoesNotExistError} from "./errors";
+import {LinkHasExpiredError, UnknownError} from "./errors";
 
 
 const tableName = process.env.TABLE_NAME ?? ""
@@ -27,7 +27,7 @@ export const InsertNewURL = async (id: string, newUrl: NewReq): Promise<Result<U
     return Result.ok(u);
 }
 
-export const getOverview = async (id: string): Promise<Result<URL, UrlDoesNotExistError>> => {
+export const getOverview = async (id: string): Promise<Result<URL, LinkHasExpiredError>> => {
     const getParams = {
         TableName: tableName,
         Key: {
@@ -37,13 +37,13 @@ export const getOverview = async (id: string): Promise<Result<URL, UrlDoesNotExi
 
     const result = await dynamoDb.get(getParams).promise();
     if (!result.Item) {
-        return Result.err({type: 'url_does_not_exist', urlId: id});
+        return Result.err({type: 'link_has_expired', urlId: id});
 
     }
     return Result.ok(URL.parse(result.Item));
 }
 
-export const DecreaseURLForwards = async (urlId: string, token: string): Promise<Result<URL, UrlDoesNotExistError>> => {
+export const DecreaseURLForwards = async (urlId: string, token: string): Promise<Result<URL, LinkHasExpiredError | UnknownError>> => {
     const now = new Date().toISOString()
     const updateParams = {
         TableName: tableName,
@@ -56,7 +56,7 @@ export const DecreaseURLForwards = async (urlId: string, token: string): Promise
             ":updated_at": now,
             ":zero": 0
         },
-        ConditionExpression: `remaining_forwards > :zero`,
+        ConditionExpression: `remaining_forwards > :zero AND attribute_exists(id)`,
         ReturnValues: "ALL_NEW",
     };
 
@@ -65,15 +65,14 @@ export const DecreaseURLForwards = async (urlId: string, token: string): Promise
         const resp = await dynamoDb.update(updateParams).promise();
 
         return Result.ok(await URL.parseAsync(resp.Attributes))
-    } catch (e) {
+    } catch (e: unknown) {
         // TODO: How do we distinguish URL missing from Condition failed?
         console.log(JSON.stringify(e))
         console.log(typeof e)
 
-        if (e.name === "ConditionalCheckFailedException") {
-            return Result.err({type: "url_does_not_exist", urlId})
+        if (e instanceof Error && e.name === "ConditionalCheckFailedException") {
+            return Result.err({type: "link_has_expired", urlId})
         }
-        return Result.err({type: "url_does_not_exist", urlId})
-        // return Result.err({type: "unknown", err: e})
+        return Result.err({type: "unknown", err: e})
     }
 }

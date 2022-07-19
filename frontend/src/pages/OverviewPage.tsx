@@ -7,11 +7,6 @@ import {useClipboard} from '@mantine/hooks';
 import OverviewTable from "./Overview/Table";
 import MainContainer from "../components/MainContainer";
 
-interface HeaderSimpleProps {
-    links: { link: string; label: string }[];
-}
-
-
 const useStyles = createStyles((theme, _params, getRef) => ({
     input: {
         backgroundColor: theme.colors.blue[1],
@@ -26,7 +21,6 @@ const PublicURLInput = (props: { url: string }) => {
 
     const copyBtn = (
         <Button
-            // color="indigo"
             variant={"outline"}
             fullWidth
             onClick={() => clipboard.copy(props.url)}>
@@ -45,26 +39,27 @@ const PublicURLInput = (props: { url: string }) => {
     />)
 }
 
-
 export function OverviewPage() {
-    let {urlId} = useParams();
+    return (
+        <MainContainer title="Overview">
+            <OverviewContent/>
+        </MainContainer>
+    )
+}
 
-    if (!urlId) {
-        return <div>Invalid URL ID</div>
-    }
+export function OverviewContent() {
+    let {urlId} = useParams() as { urlId: string };
 
     const {isLoading, isError, error, data} = trpc.useQuery(['overview', urlId]);
     const publicUrl = window.location.href.replace("/overview", "")
 
     if (isLoading) {
-        return wrapWithContainer((<><PublicURLInput url=""/><OverviewTable/></>))
+        return <><PublicURLInput url=""/><OverviewTable/></>
     } else if (isError) {
-        return wrapWithContainer(<div>Something went wrong: {error.message}</div>)
+        return <div>Something went wrong: {error.message}</div>
     } else if (!data) {
-        return wrapWithContainer(<div>Something went wrong</div>)
+        return <div>Something went wrong</div>
     } else {
-        return wrapWithContainer((<><PublicURLInput url={publicUrl}/><OverviewTable url={data}/></>))
+        return <><PublicURLInput url={publicUrl}/><OverviewTable url={data}/></>
     }
 }
-
-const wrapWithContainer = (content: JSX.Element) => <MainContainer title="Overview">{content}</MainContainer>

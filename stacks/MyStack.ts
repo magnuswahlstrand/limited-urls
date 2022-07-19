@@ -12,16 +12,7 @@ export function MyStack({stack}: StackContext) {
         environment: {
             TABLE_NAME: table.tableName,
         },
-        handler: "url/lambda.handler",
-        permissions: [table],
-        url: true,
-    })
-
-    const redirectFn = new Function(stack, "redirect", {
-        environment: {
-            TABLE_NAME: table.tableName,
-        },
-        handler: "url/redirect.handler",
+        handler: "urls/trpc.handler",
         permissions: [table],
         url: true,
     })
@@ -38,6 +29,5 @@ export function MyStack({stack}: StackContext) {
     stack.addOutputs({
         SiteUrl: site.url,
         ApiEndpoint: fn.url ?? "",
-        RedirectEndpoint: redirectFn.url ?? "",
     });
 }

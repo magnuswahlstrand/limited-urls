@@ -2,15 +2,27 @@ import React from 'react';
 import {Box, Button, Grid, Group, NativeSelect, TextInput} from '@mantine/core';
 import {useForm} from '@mantine/form';
 
+function addSchemaIfMissing(s: string) {
+    if (!s.startsWith("http://") && !s.startsWith("https://")) {
+        return "https://" + s
+    }
+    return s
+}
+
 function isValidHttpUrl(s: string) {
     let url;
 
-    console.log(s)
+    s = addSchemaIfMissing(s)
     try {
         url = new URL(s);
     } catch (e) {
         return "Invalid URL";
     }
+
+    if(s.split(".").length < 2) {
+        return "Invalid URL";
+    }
+
 
     if (url.protocol !== "http:" && url.protocol !== "https:") {
         return "Invalid protocol, use https"
@@ -27,10 +39,9 @@ interface Props {
 export function GenerateURL({onSubmit, isProcessing}: Props) {
     const form = useForm({
         initialValues: {
-            url: 'https://google.com/1',
+            url: '',
             maxRedirects: "25",
         },
-
 
         validate: {
             url: (value) => isValidHttpUrl(value)
@@ -38,15 +49,16 @@ export function GenerateURL({onSubmit, isProcessing}: Props) {
     });
 
     return (
-
         <Box sx={{maxWidth: 800}} mx="auto">
-            <form onSubmit={form.onSubmit((values) => onSubmit(values.url, parseInt(values.maxRedirects)))}>
+            <form onSubmit={form.onSubmit((values) => {
+                onSubmit(addSchemaIfMissing(values.url), parseInt(values.maxRedirects))
+            })}>
                 <Grid>
                     <Grid.Col span={8}>
                         <TextInput
                             required
                             label="URL"
-                            placeholder="https://yourdomain.com"
+                            placeholder="yourdomain.com/path"
                             {...form.getInputProps('url')}
                         />
                     </Grid.Col>

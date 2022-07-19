@@ -11,8 +11,7 @@ const appRouter = trpc.router()
         input: NewReq,
         async resolve(req) {
             const id = v4()
-            const result = await db.InsertNewURL(id, req.input)
-            // TODO: add stuff
+            await db.InsertNewURL(id, req.input)
             return {id: id};
         },
     }).mutation("redirect", {
@@ -23,7 +22,7 @@ const appRouter = trpc.router()
                 throw returnError(result.error);
             }
 
-            return {id: req.input.id, url: result};
+            return {url: result.value};
         },
     }).query('overview', {
         input: z.string(),
