@@ -7,8 +7,6 @@ Try it [HERE](https://d2lwq4ke0bh45y.cloudfront.net/).
 
 Idea based on a tweet by [@mattpocockuk](https://twitter.com/mattpocockuk)
 
-
-
 ## Usage
 1. Generate a link to a URL. Choose max number of views: 1, 10, 25 or 50.
 2. In the overview page, copy public URL and share with your friends (or foes)
@@ -16,23 +14,29 @@ Idea based on a tweet by [@mattpocockuk](https://twitter.com/mattpocockuk)
    1. Redirected to your specified URL **_or_**
    2. Stopped, if the max number of views has been reached
 
-## Architecture overview
+## Architecture and design overview
 
-limited-urls is deployed to AWS using [the Serverless Stack](sst.dev).
+#### Notable libraries used
+* [AWS DynamoDB DocumentClient](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html) - for interacting with DynamoDB
+* [true-myth](https://github.com/true-myth/true-myth) - for error handling in TypeScript, with `Maybe` and `Result` containers
+* [tRPC](https://trpc.io) - For typesafe HTTP requests
+* [React-Query](https://tanstack.com/query/v4/) - Simplifies request handling from React
+* [Serverless Stack (SST)](https://sst.dev/) - A tool to simplify developing and deploying to AWS, built on top of CDK
+
+### Architecture
 
 ![overview](docs/overview.png)
 
-# Stack
-- A single page React app - 
+### Stack
+- A single page React app 
   - uses construct [SST ReactStaticSite](https://docs.sst.dev/constructs/ReactStaticSite)
-- A single Lambda function with public URL - 
+- A single Lambda function with public URL 
   - uses [SST Function](https://docs.sst.dev/constructs/Function)
-- A DynamoDB table to store and expire links - 
+- A DynamoDB table to store and expire links 
   - uses [SST Table](https://docs.sst.dev/constructs/Table)
 
-## DynamoDB table
-
-Our table looks as follows
+    
+#### DynamoDB table schema
 ```
 {
   "id": "c1910355-cbd8-4f8e-b947-174bbfbf0207", // PK
@@ -42,11 +46,12 @@ Our table looks as follows
   "max_forwards": 25,
   "owner_client_id": "c8fadf25-cb99-453c-92a3-5b90f4acc166",
   "url": "https://wahlstrand.dev",
-  "forwarded_client_ids": {}
+  "forwarded_at": {}            // Set
+  "forwarded_client_ids": {}    // Set
 }
 ```
 
-## Todo
+# Todo
 * [x] Allow URLs without protocol schema
 * [x] Store URL (or token) in local storage and use that in request
 * [x] Only allow overview for the admin

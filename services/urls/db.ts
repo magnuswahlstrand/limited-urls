@@ -1,5 +1,4 @@
 import {DynamoDB} from "aws-sdk";
-// import {unmarshall} from "aws-sdk/util-dynamodb";
 import {NewReq, OverviewResp, RedirectResp, URL} from "./model";
 import {Result} from 'true-myth';
 import {LinkHasExpiredError, LinkNotFoundError, NotAuthorizedError, UnknownError} from "./errors";
@@ -37,7 +36,6 @@ function unwrapSet(itemElement: any) {
 
 function parseUrlRecord(record: any) {
     // TODO: Is there a better way to handle sets?
-    console.log(record)
     record["forwarded_at"] = unwrapSet(record["forwarded_at"])
     record["forwarded_client_ids"] = unwrapSet(record["forwarded_client_ids"])
 
@@ -91,8 +89,7 @@ export const DecreaseURLForwards = async (urlId: string, clientId: string): Prom
         Key: {
             id: urlId,
         },
-        // forwarded_at = list_append(forwarded_at, :now),
-        UpdateExpression: `SET remaining_forwards = remaining_forwards + :value, updated_at = :now ADD forwarded_client_ids :client_id`,
+        UpdateExpression: `SET remaining_forwards = remaining_forwards + :value, updated_at = :now ADD forwarded_client_ids :client_id, forwarded_at :now`,
         ExpressionAttributeValues: {
             ":value": -1,
             ":now": now,

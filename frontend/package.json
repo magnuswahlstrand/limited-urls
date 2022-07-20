@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "sst-env -- vite",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
@@ -21,6 +21,7 @@
     "zod": "^3.17.3"
   },
   "devDependencies": {
+    "@serverless-stack/static-site-env": "^1.5.1",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
     "@vitejs/plugin-react": "^2.0.0",
