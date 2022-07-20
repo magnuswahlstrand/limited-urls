@@ -16,7 +16,8 @@ import {v4 as uuidv4} from 'uuid';
 const API_URL = process.env.REACT_APP_API_URL ?? ""
 
 export default function App() {
-    console.log("api_url", API_URL)
+    const trimmedUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+    console.log("api_url", trimmedUrl)
     const [clientId, setClientId] = useLocalStorage<string>({key: 'clientId', defaultValue: ""});
 
     useEffect(() => {
@@ -28,7 +29,7 @@ export default function App() {
     const [queryClient] = useState(() => new QueryClient());
     const [trpcClient] = useState(() =>
         trpc.createClient({
-            url: API_URL,
+            url: trimmedUrl,
         }),
     );
     return (
