@@ -1,6 +1,8 @@
 # limited-urls
 A URL redirect service with a maximum number of users per link.
 
+![scenario](docs/limited-urls.gif)
+
 ## Overview
 
 limited-urls is deployed to AWS using [the Serverless Stack](sst.dev).
@@ -19,6 +21,8 @@ limited-urls is deployed to AWS using [the Serverless Stack](sst.dev).
   * [x] When link has expired
 * [x] Don't consume links for already redirected users
 * [x] Create a test link for admin
+* [x] Add screenshots or gif to documentation
+* [x] Update Logo and title
+* [ ] Update documentation
 * [ ] Deploy to production
 * [ ] Refactor React components
-* [ ] Update Logo and title

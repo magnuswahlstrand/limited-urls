@@ -13,8 +13,10 @@ import {v4 as uuidv4} from 'uuid';
 // if localStorage is not available or value at given key does not exist
 // 'dark' will be assigned to value variable
 
+const API_URL = process.env.REACT_APP_API_URL ?? ""
 
 export default function App() {
+    console.log("api_url", API_URL)
     const [clientId, setClientId] = useLocalStorage<string>({key: 'clientId', defaultValue: ""});
 
     useEffect(() => {
@@ -26,7 +28,7 @@ export default function App() {
     const [queryClient] = useState(() => new QueryClient());
     const [trpcClient] = useState(() =>
         trpc.createClient({
-            url: 'https://sfbonowsyhjdf36w2brknwzyzu0vjyzf.lambda-url.us-east-1.on.aws',
+            url: API_URL,
         }),
     );
     return (
